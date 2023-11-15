@@ -38,139 +38,191 @@ cTime = 0
 cap = cv2.VideoCapture(0)
 cap.set(3,840) 
 cap.set(4,680)
+class Hands():
+    while cap.isOpened():
+        success, img = cap.read()
+
+        img=cv2.flip(img,1)
+        if not success:
+            break
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        result = hands.process(img)
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) 
+        results = hands.process(imgRGB) 
+
+        alphabet = ''
 
 
-while cap.isOpened():
-    success, img = cap.read()
 
-    img=cv2.flip(img,1)
-    if not success:
-        break
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    result = hands.process(img)
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        
+        
+        if results.multi_hand_landmarks: 
 
-    imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) 
-    results = hands.process(imgRGB) 
+            # Both Hands are present in image(frame) 
+            if len(results.multi_handedness) == 2: 
+                # Display 'Both Hands' on the image 
+                cv2.putText(img, 'Both Hands', (250, 50), 
+                            cv2.FONT_HERSHEY_COMPLEX, 0.9, 
+                            (0, 255, 0), 2) 
 
-    alphabet = ''
+            # If any hand present 
+            else: 
+                for i in results.multi_handedness: 
+                    # Return whether it is Right or Left Hand 
+                    label = MessageToDict(i)[ 'classification'][0]['label'] 
+
+                    if label == 'Left':
+                        # Display 'Left Hand' on left side of window 
+                        cv2.putText(img, label+' Hand', (20, 50), 
+                                    cv2.FONT_HERSHEY_COMPLEX, 0.9, 
+                                    (0, 255, 0), 2) 
+                    if label == 'Right':
+                        # Display 'Left Hand' on left side of window 
+                        cv2.putText(img, label+' Hand', (460, 50), 
+                                    cv2.FONT_HERSHEY_COMPLEX,
+                                    0.9, (0, 255, 0), 2) 
+        
+        if results.multi_hand_landmarks:
+            for handLms in results.multi_hand_landmarks:
+                for id, lm in enumerate(handLms.landmark):
+                    #print(id,lm)
+                    h, w, c = img.shape
+                    cx, cy = int(lm.x *w), int(lm.y*h)
+                    #if id ==0:
+                    cv2.circle(img, (cx,cy), 3, (255,0,255), cv2.FILLED)
+
+                mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)
+
+        cTime = time.time()
+        fps = 1/(cTime-pTime)
+        pTime = cTime
+
+        if result.multi_hand_landmarks:
+            myHand = []
+
+            for idx, hand in enumerate(result.multi_hand_landmarks):
+                # Vẽ tọa độ khung xương bàn tay
+                mp_drawing_util.draw_landmarks(img, 
+                                            hand, 
+                                            mp_hand.HAND_CONNECTIONS,
+                                            mp_drawing_style.get_default_hand_landmarks_style(),
+                                            mp_drawing_style.get_default_hand_connections_style(),
+                                            )
+                # lbl = result.multi_handedness[idx].classification[0].label
+                for id, lm in enumerate(hand.landmark):
+                    # Lấy các tọa độ
+                    h, w, _ = img.shape
+                    myHand.append([int(lm.x * w), int(lm.y * h)])
+
+                
+                # Từ các tọa độ => chữ cái muốn hiển thị
     
-    if results.multi_hand_landmarks: 
+                # Nhận diện chữ A
+                if myHand[4][0] > myHand[2][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]:
+                    alphabet = 'A'
+                # Nhận diện chữ B
+                elif myHand[4][0] < myHand[2][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] < myHand[13][1] and myHand[20][1] < myHand[17][1]:
+                    alphabet = 'B'
+                # Nhận diện chữ C
+                elif myHand[4][0] > myHand[5][0] and myHand[8][0] > myHand[5][0] and myHand[12][0] > myHand[9][0] and myHand[16][0] > myHand[13][0] and myHand[20][1] > myHand[18][1]:
+                    alphabet = 'C'
+                # Nhận diện chữ D
+                elif myHand[4][0] > myHand[12][0] and myHand[8][0] > myHand[5][0] and myHand[12][0] > myHand[9][0] and myHand[16][0] > myHand[13][0] and myHand[20][1] < myHand[18][1]:
+                    alphabet = 'D'
+                # Nhận diện chữ E
+                elif myHand[4][0] < myHand[11][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]:
+                    alphabet = 'E'
+                # Nhận diện chữ F
+                elif myHand[4][0] > myHand[2][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] < myHand[13][1] and myHand[20][1] < myHand[17][1]:
+                    alphabet = 'F'
+                # Nhận diện chữ I
+                elif myHand[4][0] < myHand[10][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] < myHand[17][1]: 
+                    alphabet = 'I'
+                # Nhận diện chữ K
+                elif myHand[4][0] > myHand[2][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]: 
+                    alphabet = 'K'
+                # Nhận diện chữ L
+                elif myHand[4][0] > myHand[2][0] and myHand[4][0] > myHand[12][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]: 
+                    alphabet = 'L'
+                # Nhận diện chữ P
+                elif myHand[4][0] > myHand[11][0] and myHand[8][0] < myHand[6][0] and myHand[12][0] < myHand[9][0] and myHand[16][0] < myHand[13][0] and myHand[20][0] < myHand[17][0]:
+                    alphabet = 'P'
+                # Nhận diện chữ S
+                elif myHand[4][0] > myHand[11][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]:
+                    alphabet = 'S'
+                # Nhận diện chữ V
+                elif myHand[4][0] < myHand[2][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]: 
+                    alphabet = 'V'
+                # Nhận diện chữ W
+                elif myHand[4][0] < myHand[2][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] < myHand[13][1] and myHand[20][1] > myHand[17][1]: 
+                    alphabet = 'W'
+                # Nhận diện chữ Y
+                elif myHand[4][0] > myHand[10][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] < myHand[17][1]: 
+                    alphabet = 'Y'
+                # Các trường hợp cử chi sai
+                else:
+                    alphabet = 'Unknow'
 
-        # Both Hands are present in image(frame) 
-        if len(results.multi_handedness) == 2: 
-            # Display 'Both Hands' on the image 
-            cv2.putText(img, 'Both Hands', (250, 50), 
-                        cv2.FONT_HERSHEY_COMPLEX, 0.9, 
-                        (0, 255, 0), 2) 
+        # Hiểm thị chữ đã nhận dạng ra màn hình
+        cv2.putText(img, str(alphabet), (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2, cv2.LINE_AA)
 
-        # If any hand present 
-        else: 
-            for i in results.multi_handedness: 
-                # Return whether it is Right or Left Hand 
-                label = MessageToDict(i)[ 'classification'][0]['label'] 
+        
 
-                if label == 'Left':
-                    # Display 'Left Hand' on left side of window 
-                    cv2.putText(img, label+' Hand', (20, 50), 
-                                cv2.FONT_HERSHEY_COMPLEX, 0.9, 
-                                (0, 255, 0), 2) 
-                if label == 'Right':
-                    # Display 'Left Hand' on left side of window 
-                    cv2.putText(img, label+' Hand', (460, 50), 
-                                cv2.FONT_HERSHEY_COMPLEX,
-                                0.9, (0, 255, 0), 2) 
-    
-    if results.multi_hand_landmarks:
-        for handLms in results.multi_hand_landmarks:
-            for id, lm in enumerate(handLms.landmark):
-                #print(id,lm)
-                h, w, c = img.shape
-                cx, cy = int(lm.x *w), int(lm.y*h)
-                #if id ==0:
-                cv2.circle(img, (cx,cy), 3, (255,0,255), cv2.FILLED)
-
-            mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)
-
-    cTime = time.time()
-    fps = 1/(cTime-pTime)
-    pTime = cTime
-
-    if result.multi_hand_landmarks:
-        myHand = []
-
-        for idx, hand in enumerate(result.multi_hand_landmarks):
-            # Vẽ tọa độ khung xương bàn tay
-            mp_drawing_util.draw_landmarks(img, 
-                                           hand, 
-                                           mp_hand.HAND_CONNECTIONS,
-                                           mp_drawing_style.get_default_hand_landmarks_style(),
-                                           mp_drawing_style.get_default_hand_connections_style(),
-                                           )
-            # lbl = result.multi_handedness[idx].classification[0].label
-            for id, lm in enumerate(hand.landmark):
-                # Lấy các tọa độ
-                h, w, _ = img.shape
-                myHand.append([int(lm.x * w), int(lm.y * h)])
-
-            
-            # Từ các tọa độ => chữ cái muốn hiển thị
-   
-            # Nhận diện chữ A
-            if myHand[4][0] > myHand[2][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]:
-                alphabet = 'A'
-            # Nhận diện chữ B
-            elif myHand[4][0] < myHand[2][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] < myHand[13][1] and myHand[20][1] < myHand[17][1]:
-                alphabet = 'B'
-            # Nhận diện chữ C
-            elif myHand[4][0] > myHand[5][0] and myHand[8][0] > myHand[5][0] and myHand[12][0] > myHand[9][0] and myHand[16][0] > myHand[13][0] and myHand[20][1] > myHand[18][1]:
-                alphabet = 'C'
-            # Nhận diện chữ D
-            elif myHand[4][0] > myHand[12][0] and myHand[8][0] > myHand[5][0] and myHand[12][0] > myHand[9][0] and myHand[16][0] > myHand[13][0] and myHand[20][1] < myHand[18][1]:
-                alphabet = 'D'
-            # Nhận diện chữ E
-            elif myHand[4][0] < myHand[11][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]:
-                alphabet = 'E'
-            # Nhận diện chữ F
-            elif myHand[4][0] > myHand[2][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] < myHand[13][1] and myHand[20][1] < myHand[17][1]:
-                alphabet = 'F'
-            # Nhận diện chữ I
-            elif myHand[4][0] < myHand[10][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] < myHand[17][1]: 
-                alphabet = 'I'
-            # Nhận diện chữ K
-            elif myHand[4][0] > myHand[2][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]: 
-                alphabet = 'K'
-            # Nhận diện chữ L
-            elif myHand[4][0] > myHand[2][0] and myHand[4][0] > myHand[12][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]: 
-                alphabet = 'L'
-            # Nhận diện chữ P
-            elif myHand[4][0] > myHand[11][0] and myHand[8][0] < myHand[6][0] and myHand[12][0] < myHand[9][0] and myHand[16][0] < myHand[13][0] and myHand[20][0] < myHand[17][0]:
-                alphabet = 'P'
-            # Nhận diện chữ S
-            elif myHand[4][0] > myHand[11][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]:
-                alphabet = 'S'
-            # Nhận diện chữ V
-            elif myHand[4][0] < myHand[2][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] > myHand[17][1]: 
-                alphabet = 'V'
-            # Nhận diện chữ W
-            elif myHand[4][0] < myHand[2][0] and myHand[8][1] < myHand[5][1] and myHand[12][1] < myHand[9][1] and myHand[16][1] < myHand[13][1] and myHand[20][1] > myHand[17][1]: 
-                alphabet = 'W'
-            # Nhận diện chữ Y
-            elif myHand[4][0] > myHand[10][0] and myHand[8][1] > myHand[5][1] and myHand[12][1] > myHand[9][1] and myHand[16][1] > myHand[13][1] and myHand[20][1] < myHand[17][1]: 
-                alphabet = 'Y'
-            # Các trường hợp cử chi sai
-            else:
-                alphabet = 'Unknow'
-
-    # Hiểm thị chữ đã nhận dạng ra màn hình
-    cv2.putText(img, str(alphabet), (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2, cv2.LINE_AA)
-
-    
-
-    # Hiển thị hình ảnh bàn tay
-    cv2.imshow("Nhan dang bang chu cai bang cu chi tay", img)
-    
-    if cv2.waitKey(1) == ord('q'):
-      break
+        # Hiển thị hình ảnh bàn tay
+        cv2.imshow("Nhan dang bang chu cai bang cu chi tay", img)
+        
+        if cv2.waitKey(1) == ord('q'):
+            break
 cap.release()
 cv2.destroyAllWindows()
+
+
+
+from flask import Flask, render_template, Response
+
+app = Flask(__name__)
+
+# Khởi tạo đối tượng nhận diện tay
+mp_hands = mp.solutions.hands
+hands = mp_hands.Hands()
+
+camera = cv2.VideoCapture(0) 
+
+def gen_frames():  
+    while True:
+        success, frame = camera.read()
+        if not success:
+            break
+        
+        # Chuyển đổi frame sang màu RGB (Mediapipe yêu cầu RGB)
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        # Xử lý detect tay
+        results = hands.process(frame_rgb)
+        
+        # Vẽ các điểm nhận diện lên frame
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                mp.solutions.drawing_utils.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()  
+        
+        # Trả về frame để hiển thị trên web
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+    
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen_frames(), 
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
