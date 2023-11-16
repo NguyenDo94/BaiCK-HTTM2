@@ -1,6 +1,6 @@
 import cv2
 from datetime import datetime
-
+import time
 class Webcam():
     def __init__(self):
         self.vid = cv2.VideoCapture(0)
@@ -12,6 +12,8 @@ class Webcam():
 
         while True:
             _, img = self.vid.read()
+            time.sleep(0.05)
+            img = cv2.resize(img, (640, 480)) # resize to 640x480
             # font
             font = cv2.FONT_HERSHEY_SIMPLEX
             org = (50, 50)
