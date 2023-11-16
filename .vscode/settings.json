@@ -4,6 +4,7 @@
         "imencode",
         "mediapipe",
         "protobuf",
-        "tobytes"
+        "tobytes",
+        "yolo"
     ]
 }

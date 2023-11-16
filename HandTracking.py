@@ -1,9 +1,10 @@
+#Chương trình nhận diện cử chỉ bàn tay hiển thị chữ cái
 import cv2 
 import mediapipe as mp 
 import time
 from google.protobuf.json_format import MessageToDict 
 
-
+# Cấu hình và khái báo đối tượng
 mp_drawing_util = mp.solutions.drawing_utils
 mp_drawing_style = mp.solutions.drawing_styles
 
@@ -21,8 +22,6 @@ hands = mpHands.Hands(
     min_detection_confidence=0.75, 
     min_tracking_confidence=0.75, 
     max_num_hands=2) 
-
-cap = cv2.VideoCapture(0)
 
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(static_image_mode=False,
@@ -43,6 +42,7 @@ class Hands():
         success, img = cap.read()
 
         img=cv2.flip(img,1)
+        # Đọc hình ảnh thành công
         if not success:
             break
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -53,33 +53,29 @@ class Hands():
         results = hands.process(imgRGB) 
 
         alphabet = ''
-
-
-
-        
-        
+        #Phân biệt tay trái tay phải và hai tay        
         if results.multi_hand_landmarks: 
 
-            # Both Hands are present in image(frame) 
+            # Cả hai bàn tay đều có trong hình ảnh (khung) 
             if len(results.multi_handedness) == 2: 
-                # Display 'Both Hands' on the image 
+                # Hiển thị “Cả hai tay” trên hình ảnh
                 cv2.putText(img, 'Both Hands', (250, 50), 
                             cv2.FONT_HERSHEY_COMPLEX, 0.9, 
                             (0, 255, 0), 2) 
 
-            # If any hand present 
+            # Nếu có bàn tay nào hiện diện 
             else: 
                 for i in results.multi_handedness: 
                     # Return whether it is Right or Left Hand 
                     label = MessageToDict(i)[ 'classification'][0]['label'] 
 
                     if label == 'Left':
-                        # Display 'Left Hand' on left side of window 
+                        # Trả về dù là Tay Phải hay Tay Trái
                         cv2.putText(img, label+' Hand', (20, 50), 
                                     cv2.FONT_HERSHEY_COMPLEX, 0.9, 
                                     (0, 255, 0), 2) 
                     if label == 'Right':
-                        # Display 'Left Hand' on left side of window 
+                        # Hiển thị 'Tay trái' ở bên trái cửa sổ 
                         cv2.putText(img, label+' Hand', (460, 50), 
                                     cv2.FONT_HERSHEY_COMPLEX,
                                     0.9, (0, 255, 0), 2) 
@@ -167,62 +163,13 @@ class Hands():
 
         # Hiểm thị chữ đã nhận dạng ra màn hình
         cv2.putText(img, str(alphabet), (50, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2, cv2.LINE_AA)
-
-        
-
         # Hiển thị hình ảnh bàn tay
-        cv2.imshow("Nhan dang bang chu cai bang cu chi tay", img)
-        
+        # cv2.imshow("Nhan dang bang chu cai bang cu chi tay", img)
+        # Gán 1 key để thoát khỏi chương trình
         if cv2.waitKey(1) == ord('q'):
             break
+# Đóng máy ảnh
 cap.release()
 cv2.destroyAllWindows()
 
-
-
-from flask import Flask, render_template, Response
-
-app = Flask(__name__)
-
-# Khởi tạo đối tượng nhận diện tay
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands()
-
-camera = cv2.VideoCapture(0) 
-
-def gen_frames():  
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-        
-        # Chuyển đổi frame sang màu RGB (Mediapipe yêu cầu RGB)
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-        # Xử lý detect tay
-        results = hands.process(frame_rgb)
-        
-        # Vẽ các điểm nhận diện lên frame
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp.solutions.drawing_utils.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-                
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()  
-        
-        # Trả về frame để hiển thị trên web
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-    
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(), 
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
-if __name__ == "__main__":
-    app.run(debug=True)
 
